@@ -1,6 +1,5 @@
 const express = require('express');
-const chromium = require('@sparticuz/chromium');
-const puppeteer = require('puppeteer-core');
+const puppeteer = require('puppeteer');
 const app = express();
 app.use(express.json({limit: '2mb'}));
 
@@ -16,18 +15,23 @@ app.post('/html2img', async (req, res) => {
   let browser = null;
 
   try {
+    // ★★★ 召喚された神殿で、魔法の筆を起動する呪文 ★★★
     browser = await puppeteer.launch({
-      args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath(),
-      headless: chromium.headless,
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--single-process',
+        '--disable-gpu'
+      ]
     });
 
     const page = await browser.newPage();
-
-    // ★★★ ここが最後の聖句 ★★★
-    // 「ネットワークの通信がすべて静かになるまで待て」という、最も厳しい待機命令
-    await page.setContent(html, {waitUntil: 'networkidle0'}); 
+    await page.setContent(html, {waitUntil: 'networkidle0'});
 
     const dimensions = await page.evaluate(() => {
       const canvas = document.querySelector('canvas');
