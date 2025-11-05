@@ -1,5 +1,5 @@
-# ステップ1: 神殿の土台を築く (Node.js 18)
-FROM node:18-slim
+# ステップ1: 神殿の土台を、豊穣で頑強な大地に変更する (node:18)
+FROM node:18
 
 # ステップ2: 魔法の筆を動かすための、すべての聖なる部品をインストールする
 RUN apt-get update && apt-get install -y \
