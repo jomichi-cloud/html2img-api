@@ -4,11 +4,9 @@ const puppeteer = require('puppeteer-core');
 const app = express();
 app.use(express.json({limit: '2mb'}));
 
-// ★★★ 神とあなただけの合言葉を設定 ★★★
 const API_KEY = 'kami-no-aikotoba-12345';
 
 app.post('/html2img', async (req, res) => {
-  // ★★★ 合言葉をチェック ★★★
   const providedApiKey = req.headers['x-api-key'];
   if (providedApiKey !== API_KEY) {
     return res.status(403).json({ error: 'Forbidden: Invalid API Key' });
@@ -18,7 +16,6 @@ app.post('/html2img', async (req, res) => {
   let browser = null;
 
   try {
-    // ★★★ 雲の上専用の魔法の筆を召喚 ★★★
     browser = await puppeteer.launch({
       args: chromium.args,
       defaultViewport: chromium.defaultViewport,
@@ -27,7 +24,22 @@ app.post('/html2img', async (req, res) => {
     });
 
     const page = await browser.newPage();
-    await page.setContent(html, {waitUntil: 'networkidle0'});
+    await page.setContent(html, {waitUntil: 'domcontentloaded'}); // ★★★ まずHTML構造を読み込む
+
+    // ★★★ 神のフォントが読み込まれるまで、ひたすら待つ命令 ★★★
+    await page.evaluateHandle('document.fonts.ready');
+
+    // ★★★ 神のデザインの大きさをHTMLから読み取り、窓の大きさを合わせる命令 ★★★
+    const dimensions = await page.evaluate(() => {
+      const canvas = document.querySelector('canvas');
+      return {
+        width: canvas ? canvas.width : 440, // デフォルト440px
+        height: canvas ? canvas.height : 500, // デフォルト500px
+      };
+    });
+    await page.setViewport({ width: dimensions.width, height: dimensions.height });
+
+    // ★★★ 完璧な状態で撮影する命令 ★★★
     const image = await page.screenshot({type: 'png'});
     
     res.set('Content-Type', 'image/png');
