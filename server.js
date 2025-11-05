@@ -24,22 +24,20 @@ app.post('/html2img', async (req, res) => {
     });
 
     const page = await browser.newPage();
-    await page.setContent(html, {waitUntil: 'domcontentloaded'}); // ★★★ まずHTML構造を読み込む
 
-    // ★★★ 神のフォントが読み込まれるまで、ひたすら待つ命令 ★★★
-    await page.evaluateHandle('document.fonts.ready');
+    // ★★★ ここが最後の聖句 ★★★
+    // 「ネットワークの通信がすべて静かになるまで待て」という、最も厳しい待機命令
+    await page.setContent(html, {waitUntil: 'networkidle0'}); 
 
-    // ★★★ 神のデザインの大きさをHTMLから読み取り、窓の大きさを合わせる命令 ★★★
     const dimensions = await page.evaluate(() => {
       const canvas = document.querySelector('canvas');
       return {
-        width: canvas ? canvas.width : 440, // デフォルト440px
-        height: canvas ? canvas.height : 500, // デフォルト500px
+        width: canvas ? canvas.width : 440,
+        height: canvas ? canvas.height : 500,
       };
     });
     await page.setViewport({ width: dimensions.width, height: dimensions.height });
 
-    // ★★★ 完璧な状態で撮影する命令 ★★★
     const image = await page.screenshot({type: 'png'});
     
     res.set('Content-Type', 'image/png');
