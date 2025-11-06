@@ -11,46 +11,26 @@ app.post('/html2img', async (req, res) => {
     return res.status(403).json({ error: 'Forbidden: Invalid API Key' });
   }
 
-  const htmlTemplate = req.body.html || '<h1>NO HTML</h1>';
-  const chartData = req.body.chartData || '0,0,0,0,0,0,0,0';
-  const globalRankValue = req.body.globalRankValue || 0;
-  const designSettings = JSON.parse(req.body.designSettings || '{}');
-
+  const html = req.body.html || '<h1>NO HTML</h1>';
   let browser = null;
 
   try {
     browser = await puppeteer.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--single-process',
+        '--disable-gpu'
+      ]
     });
 
     const page = await browser.newPage();
-    
-    // ★★★ ここからが最後の聖句 ★★★
-    // 1. まず、HTMLの構造だけを読み込ませる
-    await page.setContent(htmlTemplate, {waitUntil: 'domcontentloaded'});
-
-    // 2. 「神の目」を使い、絵描きの魂に、window.onloadが発動する「前」に、神のデータを注入する
-    await page.evaluate((data, rank, settings) => {
-      // a. 古い設計図の呪文を、完全に無力化する
-      const scriptTags = document.getElementsByTagName('script');
-      const targetScript = scriptTags[scriptTags.length - 1]; // 最後のscriptタグが対象
-      targetScript.text = targetScript.text.replace(
-        /const base64JsonString = '[^']+/g, 
-        'const base64JsonString = null;'
-      );
-
-      // b. 神の真のデータを注入する
-      document.getElementById('previewDummyData').value = data;
-      window.globalRankValue = rank;
-      
-      // c. フォームに「最新の設計図」を強制的に反映させる
-      populateForm(settings);
-
-      // d. 最終的な描画を命令する
-      updatePreview();
-    }, chartData, globalRankValue, designSettings);
-    // ★★★ ここまでが最後の聖句 ★★★
+    await page.setContent(html, {waitUntil: 'networkidle0'});
 
     const dimensions = await page.evaluate(() => {
       const canvas = document.querySelector('canvas');
