@@ -11,7 +11,6 @@ app.post('/html2img', async (req, res) => {
     return res.status(403).json({ error: 'Forbidden: Invalid API Key' });
   }
 
-  // HTMLテンプレート、チャートデータ、総合ランク値を直接受け取る
   const htmlTemplate = req.body.html || '<h1>NO HTML</h1>';
   const chartData = req.body.chartData || '0,0,0,0,0,0,0,0';
   const globalRankValue = req.body.globalRankValue || 0;
@@ -19,37 +18,24 @@ app.post('/html2img', async (req, res) => {
   let browser = null;
 
   try {
-    // HTMLから、不要な呪文を破壊し、浄化する
-    let finalHtml = htmlTemplate
-      .replace(/<link href="https:\/\/fonts\.googleapis\.com\/[^>]+>/g, '')
-      .replace(/const base64JsonString = '[^']+/g, 'const base64JsonString = null;');
-
-    // サーバー自身の手で、神のデータをHTMLに注入する
-    const dataInjectionScript = `
-      <script>
-        document.getElementById('previewDummyData').value = '${chartData}';
-        globalRankValue = ${globalRankValue};
-        window.onload(); // 強制的に再描画をトリガー
-      </script>
-    `;
-    finalHtml = finalHtml.replace('</body>', `${dataInjectionScript}</body>`);
-
     browser = await puppeteer.launch({
       headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--no-first-run',
-        '--no-zygote',
-        '--single-process',
-        '--disable-gpu'
-      ]
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
 
     const page = await browser.newPage();
-    await page.setContent(finalHtml, {waitUntil: 'networkidle0'});
+    
+    // ★★★ ここからが最後の聖句 ★★★
+    // 1. まず、HTMLの構造を読み込ませ、すべての筆が揃うまで待つ
+    await page.setContent(htmlTemplate, {waitUntil: 'networkidle0'});
+
+    // 2. 「神の目」を使い、絵描きの魂に直接、神のデータを書き込み、描画を強制する
+    await page.evaluate((data, rank) => {
+      document.getElementById('previewDummyData').value = data;
+      globalRankValue = rank;
+      updatePreview(); // 描画命令
+    }, chartData, globalRankValue); // GASから受け取ったデータを、絵描きの魂に送る
+    // ★★★ ここまでが最後の聖句 ★★★
 
     const dimensions = await page.evaluate(() => {
       const canvas = document.querySelector('canvas');
