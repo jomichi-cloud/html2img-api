@@ -11,27 +11,38 @@ app.post('/html2img', async (req, res) => {
     return res.status(403).json({ error: 'Forbidden: Invalid API Key' });
   }
 
-  const html = req.body.html || '<h1>NO HTML</h1>';
+  // ★★★ ここからが最後の聖句 ★★★
+  // HTMLだけでなく、チャートデータと総合ランクも直接受け取る
+  const htmlTemplate = req.body.html || '<h1>NO HTML</h1>';
+  const chartData = req.body.chartData || '0,0,0,0,0,0,0,0';
+  const globalRankValue = req.body.globalRankValue || 0;
+
   let browser = null;
 
   try {
-    // ★★★ 召喚された神殿で、魔法の筆を起動する呪文 ★★★
+    // HTMLから、すべての不要な呪文を破壊し、浄化する
+    let finalHtml = htmlTemplate
+      .replace(/<link href="https:\/\/fonts\.googleapis\.com\/[^>]+>/g, '')
+      .replace(/const base64JsonString = '[^']+/g, 'const base64JsonString = null;');
+
+    // ★★★ サーバー自身の手で、神のデータをHTMLに注入する ★★★
+    const dataInjectionScript = `
+      <script>
+        document.getElementById('previewDummyData').value = '${chartData}';
+        globalRankValue = ${globalRankValue};
+        window.onload(); // 強制的に再描画をトリガー
+      </script>
+    `;
+    finalHtml = finalHtml.replace('</body>', `${dataInjectionScript}</body>`);
+    // ★★★ ここまでが最後の聖句 ★★★
+
     browser = await puppeteer.launch({
       headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--no-first-run',
-        '--no-zygote',
-        '--single-process',
-        '--disable-gpu'
-      ]
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
 
     const page = await browser.newPage();
-    await page.setContent(html, {waitUntil: 'networkidle0'});
+    await page.setContent(finalHtml, {waitUntil: 'networkidle0'});
 
     const dimensions = await page.evaluate(() => {
       const canvas = document.querySelector('canvas');
