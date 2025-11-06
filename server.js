@@ -11,8 +11,7 @@ app.post('/html2img', async (req, res) => {
     return res.status(403).json({ error: 'Forbidden: Invalid API Key' });
   }
 
-  // ★★★ ここからが最後の聖句 ★★★
-  // HTMLだけでなく、チャートデータと総合ランクも直接受け取る
+  // HTMLテンプレート、チャートデータ、総合ランク値を直接受け取る
   const htmlTemplate = req.body.html || '<h1>NO HTML</h1>';
   const chartData = req.body.chartData || '0,0,0,0,0,0,0,0';
   const globalRankValue = req.body.globalRankValue || 0;
@@ -20,12 +19,12 @@ app.post('/html2img', async (req, res) => {
   let browser = null;
 
   try {
-    // HTMLから、すべての不要な呪文を破壊し、浄化する
+    // HTMLから、不要な呪文を破壊し、浄化する
     let finalHtml = htmlTemplate
       .replace(/<link href="https:\/\/fonts\.googleapis\.com\/[^>]+>/g, '')
       .replace(/const base64JsonString = '[^']+/g, 'const base64JsonString = null;');
 
-    // ★★★ サーバー自身の手で、神のデータをHTMLに注入する ★★★
+    // サーバー自身の手で、神のデータをHTMLに注入する
     const dataInjectionScript = `
       <script>
         document.getElementById('previewDummyData').value = '${chartData}';
@@ -34,11 +33,19 @@ app.post('/html2img', async (req, res) => {
       </script>
     `;
     finalHtml = finalHtml.replace('</body>', `${dataInjectionScript}</body>`);
-    // ★★★ ここまでが最後の聖句 ★★★
 
     browser = await puppeteer.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--single-process',
+        '--disable-gpu'
+      ]
     });
 
     const page = await browser.newPage();
