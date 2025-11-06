@@ -15,6 +15,7 @@ app.post('/html2img', async (req, res) => {
   let browser = null;
 
   try {
+    // ★★★ 召喚された神殿で、魔法の筆を起動する呪文 ★★★
     browser = await puppeteer.launch({
       headless: true,
       args: [
