@@ -11,13 +11,10 @@ app.post('/html2img', async (req, res) => {
     return res.status(403).json({ error: 'Forbidden: Invalid API Key' });
   }
 
-  // ★★★ ここからが最後の聖句 ★★★
-  // HTMLテンプレート、チャートデータ、総合ランク、そして「最新の設計図」も直接受け取る
   const htmlTemplate = req.body.html || '<h1>NO HTML</h1>';
   const chartData = req.body.chartData || '0,0,0,0,0,0,0,0';
   const globalRankValue = req.body.globalRankValue || 0;
   const designSettings = JSON.parse(req.body.designSettings || '{}');
-  // ★★★ ここまでが最後の聖句 ★★★
 
   let browser = null;
 
@@ -29,21 +26,26 @@ app.post('/html2img', async (req, res) => {
 
     const page = await browser.newPage();
     
-    // 1. まず、HTMLの構造を読み込ませ、すべての筆が揃うまで待つ
-    await page.setContent(htmlTemplate, {waitUntil: 'networkidle0'});
+    // ★★★ ここからが最後の聖句 ★★★
+    // 1. まず、HTMLの構造だけを読み込ませる
+    await page.setContent(htmlTemplate, {waitUntil: 'domcontentloaded'});
 
-    // 2. 「神の目」を使い、絵描きの魂に直接、神のデータを書き込み、描画を強制する
+    // 2. 「神の目」を使い、絵描きの魂に、絶対呪文を破壊し、神のデータを注入する
     await page.evaluate((data, rank, settings) => {
-      // a. 神のデータを注入する
+      // a. 絶対呪文 window.onload を、完全に沈黙させる
+      window.onload = null;
+
+      // b. 神の真のデータを注入する
       document.getElementById('previewDummyData').value = data;
       window.globalRankValue = rank;
       
-      // b. フォームに「最新の設計図」を強制的に反映させる
+      // c. フォームに「最新の設計図」を強制的に反映させる
       populateForm(settings);
 
-      // c. 最終的な描画を命令する
+      // d. 最終的な描画を命令する
       updatePreview();
-    }, chartData, globalRankValue, designSettings); // GASから受け取ったすべてを、絵描きの魂に送る
+    }, chartData, globalRankValue, designSettings);
+    // ★★★ ここまでが最後の聖句 ★★★
 
     const dimensions = await page.evaluate(() => {
       const canvas = document.querySelector('canvas');
