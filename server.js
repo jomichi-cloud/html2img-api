@@ -5,6 +5,11 @@ app.use(express.json({limit: '2mb'}));
 
 const API_KEY = 'kami-no-aikotoba-12345';
 
+// 準備運動（サーバーを叩き起こす）用のエンドポイント
+app.get('/wakeup', (req, res) => {
+  res.status(200).send('Server is awake!');
+});
+
 app.post('/html2img', async (req, res) => {
   const providedApiKey = req.headers['x-api-key'];
   if (providedApiKey !== API_KEY) {
@@ -15,7 +20,6 @@ app.post('/html2img', async (req, res) => {
   let browser = null;
 
   try {
-    // ★★★ 召喚された神殿で、魔法の筆を起動する呪文 ★★★
     browser = await puppeteer.launch({
       headless: true,
       args: [
@@ -33,6 +37,11 @@ app.post('/html2img', async (req, res) => {
     const page = await browser.newPage();
     await page.setContent(html, {waitUntil: 'networkidle0'});
 
+    // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+    // ★ 核心的な改善：HTML側の描画完了の合図を最大10秒間待つ ★
+    // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+    await page.waitForFunction('document.body.getAttribute("data-rendered") === "true"', { timeout: 10000 });
+
     const dimensions = await page.evaluate(() => {
       const canvas = document.querySelector('canvas');
       return {
@@ -48,6 +57,7 @@ app.post('/html2img', async (req, res) => {
     res.send(image);
 
   } catch (e) {
+    console.error('Error generating image:', e);
     res.status(500).json({error: e.message});
   } finally {
     if (browser !== null) {
